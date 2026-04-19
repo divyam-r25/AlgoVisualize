@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import '../authentication/GoogleSignIn.module.css';
+import './GoogleSignIn.module.css';
 
 export function GoogleSignIn() {
   const { signInWithGoogle, error: authError } = useAuth();
