@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow all reads and writes for testing purposes - REPLACE BEFORE PRODUCTION
+    // match /{document=**} {
+    //   allow read, write: if false;
+    // }
+
+    // Users collection - each user can only read/write their own document
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+
+      // Subcollection for user sessions
+      match /sessions/{sessionId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    // Public algorithms library (read-only for authenticated users)
+    match /algorithms/{algorithmId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth.uid == resource.data.createdBy;
+    }
+
+    // Shared sessions (with specific users)
+    match /sharedSessions/{sessionId} {
+      allow read: if request.auth.uid in resource.data.sharedWith || request.auth.uid == resource.data.ownerId;
+      allow create, update: if request.auth.uid == resource.data.ownerId;
+      allow delete: if request.auth.uid == resource.data.ownerId;
+    }
+
+    // Execution history
+    match /executionHistory/{userId}/{historyId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

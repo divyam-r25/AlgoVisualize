@@ -1,0 +1,61 @@
+.navbarMiddle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid #e0e0e0;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.userAvatar:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.logoutButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #d32f2f;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.logoutButton:hover {
+  background-color: #ffebee;
+  border-color: #d32f2f;
+  box-shadow: 0 2px 4px rgba(211, 47, 47, 0.15);
+}
+
+.logoutButton:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .userSection {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .logoutButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+  }
+}

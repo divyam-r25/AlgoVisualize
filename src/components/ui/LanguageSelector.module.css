@@ -1,0 +1,96 @@
+.languageSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.select:hover {
+  border-color: #bbb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.languageSelectorButton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.languageButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.languageButton:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background-color: #f5f7ff;
+}
+
+.languageButton.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.name {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .languageSelectorButton {
+    gap: 0.25rem;
+  }
+
+  .languageButton {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .name {
+    display: none;
+  }
+
+  .languageButton .icon {
+    font-size: 1rem;
+  }
+}

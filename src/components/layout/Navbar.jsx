@@ -1,5 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useExecutionContext } from "../../context/ExecutionContext";
+import { useAuth } from "../../hooks/useAuth";
+import { LanguageSelectorButton } from "../ui/LanguageSelector";
+import styles from "./Navbar.module.css";
 
 function navClassName({ isActive }) {
   return isActive ? "nav-link nav-link-active" : "nav-link";
@@ -9,6 +12,15 @@ export default function Navbar() {
   const {
     state: { executionStatus, currentStep, totalSteps },
   } = useExecutionContext();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <header className="navbar">
@@ -29,12 +41,30 @@ export default function Navbar() {
         </NavLink>
       </nav>
 
+      <div className={styles.navbarMiddle}>
+        <LanguageSelectorButton />
+      </div>
+
       <div className="navbar-status">
         <span className={`status-pill status-${executionStatus}`}>{executionStatus}</span>
         <span>
           Step {currentStep}/{totalSteps}
         </span>
       </div>
+
+      {user && (
+        <div className={styles.userSection}>
+          <img
+            src={user.photoURL || "https://via.placeholder.com/40"}
+            alt={user.displayName}
+            className={styles.userAvatar}
+            title={user.email}
+          />
+          <button onClick={handleLogout} className={styles.logoutButton}>
+            Logout
+          </button>
+        </div>
+      )}
     </header>
   );
 }
