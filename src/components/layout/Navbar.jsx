@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useExecutionContext } from "../../context/ExecutionContext";
 import { useAuth } from "../../hooks/useAuth";
-import { LanguageSelectorButton } from "../ui/LanguageSelector";
 import styles from "./Navbar.module.css";
 
 function navClassName({ isActive }) {
@@ -40,11 +39,6 @@ export default function Navbar() {
           Saved Sessions
         </NavLink>
       </nav>
-
-      <div className={styles.navbarMiddle}>
-        <LanguageSelectorButton />
-      </div>
-
       <div className="navbar-status">
         <span className={`status-pill status-${executionStatus}`}>{executionStatus}</span>
         <span>

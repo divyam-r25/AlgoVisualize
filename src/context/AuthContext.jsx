@@ -4,10 +4,24 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile
 } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+
+// Validation functions
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function validatePassword(password) {
+  return password.length >= 6;
+}
 
 // Initialize Firebase
 function initializeFirebase() {
@@ -102,6 +116,82 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const signUpWithEmail = useCallback(async (email, password, displayName = '') => {
+    try {
+      setError(null);
+
+      if (!validateEmail(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      if (!validatePassword(password)) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Set display name if provided
+      if (displayName.trim()) {
+        await updateProfile(result.user, { displayName: displayName.trim() });
+      }
+
+      return result.user;
+    } catch (err) {
+      const raw = err.message || 'Failed to create account';
+      // Clean up Firebase error messages
+      const errorMessage = raw
+        .replace('Firebase: ', '')
+        .replace(/\(auth\/[^)]+\)\.?/, '')
+        .trim();
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const signInWithEmail = useCallback(async (email, password) => {
+    try {
+      setError(null);
+
+      if (!validateEmail(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (err) {
+      const raw = err.message || 'Failed to sign in';
+      const errorMessage = raw
+        .replace('Firebase: ', '')
+        .replace(/\(auth\/[^)]+\)\.?/, '')
+        .trim();
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email) => {
+    try {
+      setError(null);
+
+      if (!validateEmail(email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to send reset email';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       setError(null);
@@ -121,6 +211,9 @@ export function AuthProvider({ children }) {
     error,
     isAuthenticated: !!user,
     signInWithGoogle,
+    signUpWithEmail,
+    signInWithEmail,
+    resetPassword,
     logout,
   };
 

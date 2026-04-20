@@ -1,28 +1,32 @@
-import { useEffect, useRef } from "react";
-import Editor from "@monaco-editor/react";
-import { useExecutionContext } from "../../context/ExecutionContext";
-import { useCodeEditorContext } from "../../context/CodeEditorContext";
+import { useEffect, useRef } from 'react';
+import Editor from '@monaco-editor/react';
+import { useExecutionContext } from '../../context/ExecutionContext';
+import { useCodeEditorContext } from '../../context/CodeEditorContext';
+import { useLanguage } from '../../hooks/useLanguage';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function CodeEditor() {
   const { state, actions, selectors } = useExecutionContext();
   const { setIsFocused, setCursorPosition } = useCodeEditorContext();
+  const { currentLanguage, languageInfo } = useLanguage();
+  const { isDark } = useTheme();
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const decorationIdsRef = useRef([]);
 
+  const monacoLanguage = languageInfo[currentLanguage]?.monacoLanguage || 'javascript';
+
   useEffect(() => {
-    if (!editorRef.current || !monacoRef.current) {
-      return;
-    }
+    if (!editorRef.current || !monacoRef.current) return;
 
     const monaco = monacoRef.current;
     const editor = editorRef.current;
-    const decorations = selectors.breakpoints.list.map((line) => ({
+    const decorations = selectors.breakpoints.list.map(line => ({
       range: new monaco.Range(line, 1, line, 1),
       options: {
         isWholeLine: false,
-        glyphMarginClassName: "breakpoint-glyph",
-        glyphMarginHoverMessage: { value: "Breakpoint" },
+        glyphMarginClassName: 'breakpoint-glyph',
+        glyphMarginHoverMessage: { value: 'Breakpoint' },
       },
     }));
 
@@ -31,7 +35,7 @@ export default function CodeEditor() {
         range: new monaco.Range(state.currentLine, 1, state.currentLine, 1),
         options: {
           isWholeLine: true,
-          className: "active-line-highlight",
+          className: 'active-line-highlight',
         },
       });
     }
@@ -45,50 +49,41 @@ export default function CodeEditor() {
 
     editor.onDidFocusEditorText(() => setIsFocused(true));
     editor.onDidBlurEditorText(() => setIsFocused(false));
-
-    editor.onDidChangeCursorPosition((event) => {
+    editor.onDidChangeCursorPosition(event => {
       setCursorPosition({
         line: event.position.lineNumber,
         column: event.position.column,
       });
     });
-
-    editor.onMouseDown((event) => {
+    editor.onMouseDown(event => {
       const types = monaco.editor.MouseTargetType;
       const isGutterClick =
         event.target.type === types.GUTTER_GLYPH_MARGIN ||
         event.target.type === types.GUTTER_LINE_NUMBERS;
-      if (!isGutterClick || !event.target.position) {
-        return;
-      }
-      const line = event.target.position.lineNumber;
-      actions.toggleBreakpoint(line);
+      if (!isGutterClick || !event.target.position) return;
+      actions.toggleBreakpoint(event.target.position.lineNumber);
     });
   };
 
   return (
-    <section className="panel panel-editor">
-      <header className="panel-header">
-        <h2>Code Input</h2>
-        <p>JavaScript subset with deterministic step execution</p>
-      </header>
-      <Editor
-        language="javascript"
-        value={state.code}
-        onChange={(value) => actions.loadCode(value ?? "")}
-        onMount={handleEditorDidMount}
-        theme="vs-dark"
-        height="430px"
-        options={{
-          minimap: { enabled: false },
-          fontSize: 14,
-          lineNumbers: "on",
-          glyphMargin: true,
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-          tabSize: 2,
-        }}
-      />
-    </section>
+    <Editor
+      language={monacoLanguage}
+      value={state.code}
+      onChange={value => actions.loadCode(value ?? '')}
+      onMount={handleEditorDidMount}
+      theme={isDark ? 'vs-dark' : 'vs'}
+      height="100%"
+      options={{
+        minimap: { enabled: false },
+        fontSize: 14,
+        lineNumbers: 'on',
+        glyphMargin: true,
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        tabSize: 2,
+        fontFamily: "'JetBrains Mono', Consolas, monospace",
+        padding: { top: 12 },
+      }}
+    />
   );
 }

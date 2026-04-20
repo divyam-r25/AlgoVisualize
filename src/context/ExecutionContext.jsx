@@ -3,12 +3,14 @@ import { createContext, useCallback, useContext, useMemo } from "react";
 import { useBreakpoints } from "../hooks/useBreakpoints";
 import { useExecution } from "../hooks/useExecution";
 import { usePerformanceTracking } from "../hooks/usePerformanceTracking";
+import { useLanguage } from "../hooks/useLanguage";
 import { saveSession } from "../services/persistence/localSessions";
 
 const ExecutionContext = createContext(null);
 
 export function ExecutionProvider({ children }) {
   const execution = useExecution();
+  const { currentLanguage } = useLanguage();
   const breakpoints = useBreakpoints(execution.state.breakpoints);
   const performance = usePerformanceTracking(
     {
@@ -23,14 +25,14 @@ export function ExecutionProvider({ children }) {
   const saveCurrentSession = useCallback(() => {
     const payload = {
       code: execution.state.code,
-      language: "javascript",
+      language: currentLanguage,
       selectedAlgorithm: execution.state.selectedAlgorithmId,
       stepRecords: execution.state.traceLog,
       createdAt: Date.now(),
       version: 1,
     };
     return saveSession(payload);
-  }, [execution.state.code, execution.state.selectedAlgorithmId, execution.state.traceLog]);
+  }, [currentLanguage, execution.state.code, execution.state.selectedAlgorithmId, execution.state.traceLog]);
 
   const contextValue = useMemo(
     () => ({

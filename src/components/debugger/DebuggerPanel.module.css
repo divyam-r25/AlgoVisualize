@@ -1,0 +1,231 @@
+.watch-expressions,
+.expression-evaluator {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+/* Watch Expressions */
+.watch-header,
+.eval-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.watch-header h3,
+.eval-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.eval-step {
+  font-size: 0.85rem;
+  color: #999;
+  font-weight: normal;
+}
+
+.watch-input-group,
+.eval-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.watch-input,
+.eval-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: white;
+}
+
+.watch-input:focus,
+.eval-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.watch-button,
+.eval-button {
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.watch-button:hover,
+.eval-button:hover {
+  background: #764ba2;
+}
+
+.watch-button:active,
+.eval-button:active {
+  transform: scale(0.98);
+}
+
+.watch-error,
+.eval-error {
+  padding: 0.75rem;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef5350;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.watch-empty {
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 1rem 0;
+}
+
+.watch-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.watch-expr-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+}
+
+.watch-expr-name code {
+  background: #f5f5f5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.watch-value {
+  flex: 0 1 auto;
+  color: #667eea;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.watch-value code {
+  background: #f5f5f5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.watch-value.error {
+  color: #f44336;
+}
+
+.watch-remove {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  color: #999;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watch-remove:hover {
+  background: #ffebee;
+  border-color: #ef5350;
+  color: #f44336;
+}
+
+/* Expression Evaluator */
+.eval-help {
+  color: #999;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.eval-result {
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.eval-result-label {
+  font-weight: 600;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.eval-result-value {
+  flex: 1;
+  text-align: right;
+  color: #667eea;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eval-result-value code {
+  background: #f5f5f5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Scrollbar */
+.watch-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.watch-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0.25rem;
+}
+
+.watch-list::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 0.25rem;
+}
+
+.watch-list::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}

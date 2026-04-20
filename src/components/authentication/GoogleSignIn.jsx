@@ -1,29 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import './GoogleSignIn.module.css';
+import './GoogleSignIn.css';
 
 export function GoogleSignIn() {
   const { signInWithGoogle, error: authError } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [localError, setLocalError] = useState(null);
 
   const handleSignIn = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setLocalError(null);
       await signInWithGoogle();
     } catch (err) {
-      setError(err.message || 'Failed to sign in with Google');
+      setLocalError(err.message || 'Failed to sign in with Google');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (authError) {
-      setError(authError);
-    }
-  }, [authError]);
+  const error = localError || authError;
 
   return (
     <div className="google-signin">

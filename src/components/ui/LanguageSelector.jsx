@@ -1,5 +1,4 @@
 import { useLanguage } from '../../hooks/useLanguage';
-import { LANGUAGE_INFO } from '../../context/LanguageContext';
 import styles from './LanguageSelector.module.css';
 
 export function LanguageSelector() {

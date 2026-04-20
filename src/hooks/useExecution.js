@@ -11,6 +11,7 @@ import {
   stepRuntime,
 } from "../services/executionEngine";
 import { useParser } from "./useParser";
+import { useLanguage } from "./useLanguage";
 
 const SNAPSHOT_INTERVAL = 10;
 const MIN_SPEED = 0.25;
@@ -345,7 +346,8 @@ export function executionReducer(state, action) {
 
 export function useExecution() {
   const [state, dispatch] = useReducer(executionReducer, null, createBaseState);
-  const parseResult = useParser(state.code);
+  const { currentLanguage } = useLanguage();
+  const parseResult = useParser(state.code, currentLanguage);
 
   useEffect(() => {
     if (parseResult.error) {
