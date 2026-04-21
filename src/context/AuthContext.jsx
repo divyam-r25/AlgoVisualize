@@ -71,14 +71,16 @@ export function AuthProvider({ children }) {
 
   // ── Listen to auth state once on mount ──
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        await syncUserToFirestore(firebaseUser);
         setUser(firebaseUser);
+        setLoading(false);
+        // Sync in background to prevent blocking UI updates
+        syncUserToFirestore(firebaseUser);
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe; // cleanup on unmount
