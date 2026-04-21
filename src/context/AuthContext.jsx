@@ -1,6 +1,5 @@
-import { createContext, useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
-  getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
@@ -8,200 +7,175 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  updateProfile
+  updateProfile,
 } from 'firebase/auth';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+// ← Use the shared singleton instances — never re-init Firebase here
+import { auth, db } from '../services/firebase';
 
-// Validation functions
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function validatePassword(password) {
-  return password.length >= 6;
+  return typeof password === 'string' && password.length >= 6;
 }
 
-// Initialize Firebase
-function initializeFirebase() {
-  const config = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  };
-
-  if (!config.apiKey) {
-    throw new Error('Firebase configuration is missing. Check .env.local file.');
-  }
-
-  if (!getApps().length) {
-    return initializeApp(config);
-  }
-  return getApps()[0];
+/** Strip verbose Firebase prefix/suffix from error messages */
+function cleanFirebaseError(raw) {
+  return (raw || 'An unexpected error occurred')
+    .replace('Firebase: ', '')
+    .replace(/\(auth\/[^)]+\)\.?/, '')
+    .trim();
 }
 
+// ─── Context ──────────────────────────────────────────────────────────────────
 export const AuthContext = createContext(null);
 
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initialize Firebase on mount
-  useEffect(() => {
+  // ── Sync user to Firestore on login ──
+  async function syncUserToFirestore(firebaseUser) {
     try {
-      const app = initializeFirebase();
-      const auth = getAuth(app);
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const snap = await getDoc(userRef);
 
-      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-          // Create or update user document in Firestore
-          try {
-            const db = getFirestore(app);
-            const userRef = doc(db, 'users', currentUser.uid);
-            const userSnap = await getDoc(userRef);
-
-            if (!userSnap.exists()) {
-              await setDoc(userRef, {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                displayName: currentUser.displayName,
-                photoURL: currentUser.photoURL,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-              });
-            } else {
-              // Update last login
-              await setDoc(
-                userRef,
-                { lastLogin: new Date().toISOString() },
-                { merge: true }
-              );
-            }
-          } catch (dbError) {
-            console.error('Failed to sync user to Firestore:', dbError);
-          }
-
-          setUser(currentUser);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      });
-
-      return unsubscribe;
+      if (!snap.exists()) {
+        await setDoc(userRef, {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName ?? '',
+          photoURL: firebaseUser.photoURL ?? '',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+        });
+      } else {
+        await setDoc(userRef, { lastLogin: new Date().toISOString() }, { merge: true });
+      }
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
+      // Non-fatal: auth still works even if Firestore write fails
+      console.error('Failed to sync user to Firestore:', err);
     }
+  }
+
+  // ── Listen to auth state once on mount ──
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await syncUserToFirestore(firebaseUser);
+        setUser(firebaseUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe; // cleanup on unmount
   }, []);
 
+  // ── Google sign-in ──
   const signInWithGoogle = useCallback(async () => {
+    setError(null);
     try {
-      setError(null);
-      const app = initializeFirebase();
-      const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
-
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (err) {
-      const errorMessage = err.message || 'Failed to sign in';
-      setError(errorMessage);
-      throw err;
+      const msg = cleanFirebaseError(err.message);
+      setError(msg);
+      throw new Error(msg);
     }
   }, []);
 
+  // ── Email sign-up ──
   const signUpWithEmail = useCallback(async (email, password, displayName = '') => {
+    setError(null);
+
+    if (!validateEmail(email)) {
+      const msg = 'Please enter a valid email address';
+      setError(msg);
+      throw new Error(msg);
+    }
+    if (!validatePassword(password)) {
+      const msg = 'Password must be at least 6 characters long';
+      setError(msg);
+      throw new Error(msg);
+    }
+
     try {
-      setError(null);
-
-      if (!validateEmail(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      if (!validatePassword(password)) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-
-      const app = initializeFirebase();
-      const auth = getAuth(app);
       const result = await createUserWithEmailAndPassword(auth, email, password);
-
-      // Set display name if provided
       if (displayName.trim()) {
         await updateProfile(result.user, { displayName: displayName.trim() });
       }
-
       return result.user;
     } catch (err) {
-      const raw = err.message || 'Failed to create account';
-      // Clean up Firebase error messages
-      const errorMessage = raw
-        .replace('Firebase: ', '')
-        .replace(/\(auth\/[^)]+\)\.?/, '')
-        .trim();
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const msg = cleanFirebaseError(err.message);
+      setError(msg);
+      throw new Error(msg);
     }
   }, []);
 
+  // ── Email sign-in ──
   const signInWithEmail = useCallback(async (email, password) => {
+    setError(null);
+
+    if (!validateEmail(email)) {
+      const msg = 'Please enter a valid email address';
+      setError(msg);
+      throw new Error(msg);
+    }
+
     try {
-      setError(null);
-
-      if (!validateEmail(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      const app = initializeFirebase();
-      const auth = getAuth(app);
       const result = await signInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (err) {
-      const raw = err.message || 'Failed to sign in';
-      const errorMessage = raw
-        .replace('Firebase: ', '')
-        .replace(/\(auth\/[^)]+\)\.?/, '')
-        .trim();
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const msg = cleanFirebaseError(err.message);
+      setError(msg);
+      throw new Error(msg);
     }
   }, []);
 
+  // ── Password reset ──
   const resetPassword = useCallback(async (email) => {
+    setError(null);
+
+    if (!validateEmail(email)) {
+      const msg = 'Please enter a valid email address';
+      setError(msg);
+      throw new Error(msg);
+    }
+
     try {
-      setError(null);
-
-      if (!validateEmail(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      const app = initializeFirebase();
-      const auth = getAuth(app);
       await sendPasswordResetEmail(auth, email);
       return true;
     } catch (err) {
-      const errorMessage = err.message || 'Failed to send reset email';
-      setError(errorMessage);
-      throw err;
+      const msg = cleanFirebaseError(err.message);
+      setError(msg);
+      throw new Error(msg);
     }
   }, []);
 
+  // ── Sign-out ──
   const logout = useCallback(async () => {
+    setError(null);
     try {
-      setError(null);
-      const auth = getAuth();
       await signOut(auth);
       setUser(null);
     } catch (err) {
-      const errorMessage = err.message || 'Failed to sign out';
-      setError(errorMessage);
-      throw err;
+      const msg = cleanFirebaseError(err.message);
+      setError(msg);
+      throw new Error(msg);
     }
   }, []);
 
@@ -217,9 +191,5 @@ export function AuthProvider({ children }) {
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
